@@ -1,0 +1,62 @@
+CONF = 'conf.yml'
+require 'yaml'
+require 'set'
+require 'date'
+
+GENERATED_FILE_LINE = %(###### FILE GENERATED #{Date.today.to_s} ######)
+
+@conf = File.open(CONF) { |f| YAML::load(f) }
+
+desc "Regenerate environment files."
+task :regen do
+  conf = @conf
+  File.open("pg_service.conf", 'w') { |f| f.write(pg_service(conf["services"])) }
+  envs(conf["services"], conf["default_service"]).each do |file_name, contents|
+    File.open(file_name, 'w') { |f| f.write(contents) }
+  end
+end
+
+
+def pg_service(services)
+  lines = [GENERATED_FILE_LINE]
+  service_lines = services.keys.sort.inject([]) do |lines, service|
+    conf = services[service].slice("user", "dbname", "port", "host")
+    lines << %([#{service}])
+    lines << conf.map { |k,v| %(#{k}=#{v}) }
+    lines << ""
+  end
+  (lines + service_lines).join("\n")
+end
+
+def envs(services, default_service = nil)
+  files = services.keys.inject({}) do |f, service|
+    conf = services[service]
+    file_name = %(#{service})
+    f[file_name] = env(service, conf["version"])
+    f
+  end
+  if default_service && files[default_service]
+    files["default"] = files[default_service]
+  end
+  files
+end
+
+def env(service, version)
+  <<EOF
+#{GENERATED_FILE_LINE}
+export PGSERVICE=#{service}
+PG_VER=#{version}
+. ${PGSYSCONFDIR}/pg.env
+EOF
+end
+
+class Hash
+  def slice(*keys)
+    allowed = Set.new(respond_to?(:convert_key) ? keys.map { |key| convert_key(key) } : keys)
+    hash = {}
+    allowed.each { |k| hash[k] = self[k] if has_key?(k) }
+    hash
+  end
+end
+
+task :default => [:regen]

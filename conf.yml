@@ -1,0 +1,51 @@
+---
+defaults:
+  local: &local
+    user: grzm
+    dbname: postgres
+default_service: "96"
+services:
+  "10":
+    <<: *local
+    version: "10"
+    port: 5410
+  "96":
+    <<: *local
+    version: "9.6"
+    port: 5496
+  "95":
+    <<: *local
+    version: "9.5"
+    port: 5495
+  "94":
+    <<: *local
+    version: "9.4"
+    port: 5494
+  "93":
+    <<: *local
+    version: "9.3"
+    port: 5493
+  "92":
+    <<: *local
+    version: "9.2"
+    port: 5492
+  "91":
+    <<: *local
+    version: "9.1"
+    port: 5491
+  "90":
+    <<: *local
+    version: "9.0"
+    port: 5490
+  "84":
+    <<: *local
+    version: "8.4"
+    port: 5484
+  "83":
+    <<: *local
+    version: "8.3"
+    port: 5483
+  "82":
+    <<: *local
+    version: "8.2"
+    port: 5482
