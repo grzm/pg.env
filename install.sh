@@ -12,14 +12,15 @@ while getopts "v:" OPT ; do
 done
 
 case "${PG_MAJOR_VERSION}" in
-    10 ) PG_MINOR_VERSION=10.1 ;;
-    9.6 ) PG_MINOR_VERSION=9.6.3 ;;
-    9.5 ) PG_MINOR_VERSION=9.5.7 ;;
-    9.4 ) PG_MINOR_VERSION=9.4.1 ;;
-    9.3 ) PG_MINOR_VERSION=9.3.6 ;;
-    9.2 ) PG_MINOR_VERSION=9.2.10 ;;
-    9.1 ) PG_MINOR_VERSION=9.1.15 ;;
-    9.0 ) PG_MINOR_VERSION=9.0.19 ;;
+    11 ) PG_MINOR_VERSION=11.0 ;;
+    10 ) PG_MINOR_VERSION=10.5 ;;
+    9.6 ) PG_MINOR_VERSION=9.6.10 ;;
+    9.5 ) PG_MINOR_VERSION=9.5.14 ;;
+    9.4 ) PG_MINOR_VERSION=9.4.19 ;;
+    9.3 ) PG_MINOR_VERSION=9.3.24 ;;
+    9.2 ) PG_MINOR_VERSION=9.2.24 ;;
+    9.1 ) PG_MINOR_VERSION=9.1.24 ;;
+    9.0 ) PG_MINOR_VERSION=9.0.23 ;;
     8.4 ) PG_MINOR_VERSION=8.4.22 ;;
     8.3 ) PG_MINOR_VERSION=8.3.23 ;;
     8.2 ) PG_MINOR_VERSION=8.2.23 ;;
@@ -43,11 +44,17 @@ test -e "${PKG_NAME}" || wget "${PKG_URL}"
 test -d "${SRC_DIRNAME}" || tar -zxf "${PKG_NAME}"
 cd "${SRC_DIRNAME}"
 
+set +e
+make clean
+set -e
+
 case "${PG_MAJOR_VERSION}" in
-    10 )
+    1[01] )
         ./configure --prefix "${PREFIX}" \
                     --with-includes=/opt/local/include \
                     --with-libraries=/opt/local/lib \
+                    --enable-debug \
+                    --enable-cassert \
                     --enable-dtrace \
                     --enable-nls \
                     --with-bonjour \
@@ -60,8 +67,22 @@ case "${PG_MAJOR_VERSION}" in
                     --with-pam \
                     --with-perl \
                     --with-python \
-                    --with-tcl
-        make && make check && make install && make -C contrib && make -C contrib install
+                    --with-tcl \
+                    CFLAGS="-ggdb"
+
+        # Ideally we'd run make check before make install. However, on macOS with SIP,
+        # the dynamic linker falls back on /usr/lib/libpq.dylib if there isn't an
+        # existing installation. So, we install and *then* check.
+        # For details, see
+        # https://www.postgresql.org/message-id/18963.1497367542%40sss.pgh.pa.us
+
+        make
+        if [ -e "${PREFIX}/lib/libpq.dylib" ]; then
+            make check && make install
+        else
+            make install && make check
+        fi
+        make -C contrib && make -C contrib install
         ;;
     9.[456] )
         ./configure --prefix "${PREFIX}" \
@@ -80,7 +101,13 @@ case "${PG_MAJOR_VERSION}" in
                     --with-perl \
                     --with-python \
                     --with-tcl
-        make && make check && make install && make -C contrib && make -C contrib install
+        make
+        if [ -e "${PREFIX}/lib/libpq.dylib" ]; then
+            make check && make install
+        else
+            make install && make check
+        fi
+        make -C contrib && make -C contrib install
         ;;
     9.[0123] )
         patch -p1 -i "${SCRIPT_PATH}/uuid-ossp.patch"
