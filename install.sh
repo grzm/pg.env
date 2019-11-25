@@ -12,12 +12,13 @@ while getopts "v:" OPT ; do
 done
 
 case "${PG_MAJOR_VERSION}" in
-    11 ) PG_MINOR_VERSION=11.0 ;;
-    10 ) PG_MINOR_VERSION=10.5 ;;
-    9.6 ) PG_MINOR_VERSION=9.6.10 ;;
-    9.5 ) PG_MINOR_VERSION=9.5.14 ;;
-    9.4 ) PG_MINOR_VERSION=9.4.19 ;;
-    9.3 ) PG_MINOR_VERSION=9.3.24 ;;
+    12 ) PG_MINOR_VERSION=12.0 ;;
+    11 ) PG_MINOR_VERSION=11.5 ;;
+    10 ) PG_MINOR_VERSION=10.6 ;;
+    9.6 ) PG_MINOR_VERSION=9.6.11 ;;
+    9.5 ) PG_MINOR_VERSION=9.5.15 ;;
+    9.4 ) PG_MINOR_VERSION=9.4.20 ;;
+    9.3 ) PG_MINOR_VERSION=9.3.25 ;;
     9.2 ) PG_MINOR_VERSION=9.2.24 ;;
     9.1 ) PG_MINOR_VERSION=9.1.24 ;;
     9.0 ) PG_MINOR_VERSION=9.0.23 ;;
@@ -49,7 +50,7 @@ make clean
 set -e
 
 case "${PG_MAJOR_VERSION}" in
-    1[01] )
+    1[012] )
         ./configure --prefix "${PREFIX}" \
                     --with-includes=/opt/local/include \
                     --with-libraries=/opt/local/lib \
